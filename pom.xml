@@ -9,7 +9,7 @@
 		<relativePath/>
 	</parent>
 	<groupId>com.kernelpanic</groupId>
-	<artifactId>apontamentohoras-service</artifactId>
+	<artifactId>apontamentohoras_service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>apontamentohoras-service</name>
 	<description>Microserviço de apontamento de horas - KP 3DSM</description>
