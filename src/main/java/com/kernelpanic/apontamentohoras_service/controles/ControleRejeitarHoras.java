@@ -1,8 +1,5 @@
 package com.kernelpanic.apontamentohoras_service.controles;
 
-package com.kernelpanic.apontamentohoras_service.controles;
-
-package com.kernelpanic.apontamentohoras_service.controles;
 
 import java.util.List;
 import java.util.Map;
@@ -31,9 +28,8 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/horas")
 @RequiredArgsConstructor
 public class ControleRejeitarHoras {
-    
-}
-@PatchMapping("/{id}/rejeitar")
+    @PatchMapping("/{id}/rejeitar")
     public ResponseEntity<HoraResponse> rejeitar(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(horaService.rejeitar(id, body.get("motivoRejeicao")));
     }
+}

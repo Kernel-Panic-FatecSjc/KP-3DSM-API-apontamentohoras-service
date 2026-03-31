@@ -1,8 +1,5 @@
 package com.kernelpanic.apontamentohoras_service.controles;
 
-package com.kernelpanic.apontamentohoras_service.controles;
-
-package com.kernelpanic.apontamentohoras_service.controles;
 
 import java.util.List;
 import java.util.Map;
@@ -31,9 +28,8 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/horas")
 @RequiredArgsConstructor
 public class ControleFiltrarHoras {
-    
-}
-@GetMapping
+
+    @GetMapping
     public ResponseEntity<List<HoraResponse>> listar(
             @RequestParam Long usuarioId,
             @RequestParam(required = false) EstadoHora estado) {
@@ -43,3 +39,5 @@ public class ControleFiltrarHoras {
         }
         return ResponseEntity.ok(horaService.listarPorUsuario(usuarioId));
     }
+    
+}
