@@ -4,6 +4,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import com.kernelpanic.apontamentohoras_service.enums.EstadoHora;
+import com.kernelpanic.apontamentohoras_service.enums.TipoAtividade;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

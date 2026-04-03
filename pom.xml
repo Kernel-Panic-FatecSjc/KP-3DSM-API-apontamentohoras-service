@@ -11,7 +11,7 @@
 	<groupId>com.kernelpanic</groupId>
 	<artifactId>apontamentohoras_service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>apontamentohoras-service</name>
+	<name>apontamentohoras_service</name>
 	<description>Microserviço de apontamento de horas - KP 3DSM</description>
 	<properties>
 		<java.version>21</java.version>
@@ -77,4 +77,5 @@
 			</plugin>
 		</plugins>
 	</build>
+	
 </project>

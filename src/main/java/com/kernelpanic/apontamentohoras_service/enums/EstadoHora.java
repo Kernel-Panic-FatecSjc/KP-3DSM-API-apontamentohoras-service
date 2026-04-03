@@ -1,4 +1,4 @@
-package com.kernelpanic.apontamentohoras.model;
+package com.kernelpanic.apontamentohoras_service.enums;
 
 public enum EstadoHora {
     PENDENTE,
