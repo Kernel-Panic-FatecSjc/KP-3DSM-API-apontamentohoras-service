@@ -145,7 +145,22 @@ public class ApontamentoServico {
     }
 
 
-    // --- MAPPERS E VALIDAÃ‡Ã•ES AUXILIARES ---
+    
+    @Transactional
+    public HorasExibirDTO enviarParaAprovacao(Long id) {
+        Hora hora = repositorio.findById(id)
+                .orElseThrow(() -> new RuntimeException("Hora nao encontrada"));
+
+        if (hora.getEstado() != EstadoHora.PENDENTE) {
+            throw new RuntimeException("Apenas apontamentos PENDENTES podem ser enviados para aprovacao.");
+        }
+
+        hora.setEstado(EstadoHora.AGUARDANDO_APROVACAO);
+
+        Hora salva = repositorio.save(hora);
+        return converterParaExibirDTO(salva);
+    }
+    // --- MAPPERS E VALIDAÇÕES AUXILIARES ---
 
     private void validarHorarios(java.time.LocalTime inicio, java.time.LocalTime fim) {
         if (fim.isBefore(inicio)) {
