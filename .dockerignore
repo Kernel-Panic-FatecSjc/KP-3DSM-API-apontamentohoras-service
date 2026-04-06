@@ -1,0 +1,7 @@
+target/
+.git/
+.gitignore
+*.md
+.idea/
+.vscode/
+# Removido: mvnw e mvnw.cmd desta lista

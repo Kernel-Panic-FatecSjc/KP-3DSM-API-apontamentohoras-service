@@ -1,0 +1,27 @@
+services:
+  db-apontamento:
+    image: mysql:8.0
+    container_name: db-apontamento
+    environment:
+      MYSQL_DATABASE: bancohoras
+      MYSQL_ROOT_PASSWORD: fatec
+    ports:
+      - "3310:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  apontamento-service:
+    build: .
+    container_name: apontamento-service
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db-apontamento:3306/bancohoras?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=fatec
+    depends_on:
+      db-apontamento:
+        condition: service_healthy
