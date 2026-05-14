@@ -1,12 +1,17 @@
 package com.kernelpanic.apontamentohoras_service.servicos;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kernelpanic.apontamentohoras_service.dtos.*;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasAtualizarDTO;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasCadastrar;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasExibirDTO;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasFiltroDTO;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasRejeitarDTO;
 import com.kernelpanic.apontamentohoras_service.entidades.Hora;
 import com.kernelpanic.apontamentohoras_service.enums.EstadoHora;
 import com.kernelpanic.apontamentohoras_service.repositorios.ApontamentoRepositorio;
@@ -19,8 +24,7 @@ public class ApontamentoServico {
 
     private final ApontamentoRepositorio repositorio;
 
-    // --- MÉTODOS DE CONSULTA ---
-
+    // Consulta
     public List<HorasExibirDTO> obterTodos() {
         return repositorio.findAll().stream()
                 .map(this::converterParaExibirDTO)
@@ -39,12 +43,12 @@ public class ApontamentoServico {
                 .collect(Collectors.toList());
     }
 
-    // --- MÉTODOS DE ESCRITA ---
-
     @Transactional
     public HorasExibirDTO cadastrarViaDTO(HorasCadastrar dto) {
+        validarDataLancamento(dto.getDataLancamento());
         validarHorarios(dto.getInicio(), dto.getFim());
-        
+        validarJustificativaRetroativa(dto.getDataLancamento(), dto.getJustificativa());
+
         Hora hora = new Hora();
         hora.setTarefaId(dto.getTarefaId());
         hora.setUsuarioId(dto.getUsuarioId());
@@ -61,7 +65,7 @@ public class ApontamentoServico {
     }
 
     @Transactional
-    public HorasExibirDTO atualizarViaDTO(Long id, HorasAtualizarDTO dto) { 
+    public HorasExibirDTO atualizarViaDTO(Long id, HorasAtualizarDTO dto) {
         Hora hora = repositorio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Não foi possível localizar o apontamento de ID: " + id));
 
@@ -69,7 +73,9 @@ public class ApontamentoServico {
             throw new RuntimeException("Apenas apontamentos PENDENTES podem ser editados.");
         }
 
+        validarDataLancamento(dto.getDataLancamento());
         validarHorarios(dto.getInicio(), dto.getFim());
+        validarJustificativaRetroativa(dto.getDataLancamento(), dto.getJustificativa());
 
         hora.setTarefaId(dto.getTarefaId());
         hora.setTituloSessao(dto.getTituloSessao());
@@ -103,18 +109,16 @@ public class ApontamentoServico {
                 .orElseThrow(() -> new RuntimeException("Registro " + id + " não encontrado."));
     }
 
-    // --- MÉTODOS DE APROVAÇÃO (GERÊNCIA) ---
-
     @Transactional
     public HorasExibirDTO aprovarHora(Long id) {
         Hora hora = repositorio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hora não encontrada"));
-        
+
         hora.setEstado(EstadoHora.APROVADO);
-        hora.setMotivoRejeicao(null); 
-        
+        hora.setMotivoRejeicao(null);
+
         Hora horaSalva = repositorio.save(hora);
-        return converterParaExibirDTO(horaSalva); 
+        return converterParaExibirDTO(horaSalva);
     }
 
     @Transactional
@@ -124,15 +128,13 @@ public class ApontamentoServico {
 
         hora.setEstado(EstadoHora.REJEITADO);
         hora.setMotivoRejeicao(dto.getMotivoRejeicao());
-        
+
         Hora salva = repositorio.save(hora);
         return converterParaExibirDTO(salva);
     }
 
     @Transactional(readOnly = true)
     public List<HorasExibirDTO> filtrarHoras(HorasFiltroDTO filtro) {
-        // Aqui você usaria o repositório com uma Specification ou Query customizada
-        // Se o seu repositório ainda não tem busca dinâmica, você pode implementar assim:
         return repositorio.buscarComFiltros(
                 filtro.getUsuarioId(),
                 filtro.getProjetoId(),
@@ -140,12 +142,10 @@ public class ApontamentoServico {
                 filtro.getDataInicio(),
                 filtro.getDataFim()
         ).stream()
-        .map(this::converterParaExibirDTO)
-        .collect(Collectors.toList());
+                .map(this::converterParaExibirDTO)
+                .collect(Collectors.toList());
     }
 
-
-    
     @Transactional
     public HorasExibirDTO enviarParaAprovacao(Long id) {
         Hora hora = repositorio.findById(id)
@@ -160,11 +160,25 @@ public class ApontamentoServico {
         Hora salva = repositorio.save(hora);
         return converterParaExibirDTO(salva);
     }
-    // --- MAPPERS E VALIDA��ES AUXILIARES ---
+
+    // VALIDAÇÃO
+    private void validarDataLancamento(LocalDate dataLancamento) {
+        if (dataLancamento != null && dataLancamento.isAfter(LocalDate.now())) {
+            throw new RuntimeException("A data de lançamento não pode ser futura.");
+        }
+    }
+
+    private void validarJustificativaRetroativa(LocalDate dataLancamento, String justificativa) {
+        if (dataLancamento != null && dataLancamento.isBefore(LocalDate.now())) {
+            if (justificativa == null || justificativa.isBlank()) {
+                throw new RuntimeException("Justificativa é obrigatória para lançamentos retroativos.");
+            }
+        }
+    }
 
     private void validarHorarios(java.time.LocalTime inicio, java.time.LocalTime fim) {
-        if (fim.isBefore(inicio)) {
-            throw new RuntimeException("O horário de término não pode ser anterior ao início.");
+        if (fim.isBefore(inicio) || fim.equals(inicio)) {
+            throw new RuntimeException("O horário de término deve ser posterior ao início.");
         }
     }
 
