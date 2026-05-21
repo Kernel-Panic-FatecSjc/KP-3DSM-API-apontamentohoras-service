@@ -1,17 +1,14 @@
 package com.kernelpanic.apontamentohoras_service.servicos;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.kernelpanic.apontamentohoras_service.dtos.HorasAtualizarDTO;
-import com.kernelpanic.apontamentohoras_service.dtos.HorasCadastrar;
-import com.kernelpanic.apontamentohoras_service.dtos.HorasExibirDTO;
-import com.kernelpanic.apontamentohoras_service.dtos.HorasFiltroDTO;
-import com.kernelpanic.apontamentohoras_service.dtos.HorasRejeitarDTO;
+import java.time.Duration;
+
+import com.kernelpanic.apontamentohoras_service.dtos.*;
 import com.kernelpanic.apontamentohoras_service.entidades.Hora;
 import com.kernelpanic.apontamentohoras_service.enums.EstadoHora;
 import com.kernelpanic.apontamentohoras_service.repositorios.ApontamentoRepositorio;
@@ -24,7 +21,7 @@ public class ApontamentoServico {
 
     private final ApontamentoRepositorio repositorio;
 
-    // Consulta
+
     public List<HorasExibirDTO> obterTodos() {
         return repositorio.findAll().stream()
                 .map(this::converterParaExibirDTO)
@@ -43,12 +40,11 @@ public class ApontamentoServico {
                 .collect(Collectors.toList());
     }
 
+
     @Transactional
     public HorasExibirDTO cadastrarViaDTO(HorasCadastrar dto) {
-        validarDataLancamento(dto.getDataLancamento());
         validarHorarios(dto.getInicio(), dto.getFim());
-        validarJustificativaRetroativa(dto.getDataLancamento(), dto.getJustificativa());
-
+        
         Hora hora = new Hora();
         hora.setTarefaId(dto.getTarefaId());
         hora.setUsuarioId(dto.getUsuarioId());
@@ -65,17 +61,15 @@ public class ApontamentoServico {
     }
 
     @Transactional
-    public HorasExibirDTO atualizarViaDTO(Long id, HorasAtualizarDTO dto) {
+    public HorasExibirDTO atualizarViaDTO(Long id, HorasAtualizarDTO dto) { 
         Hora hora = repositorio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Não foi possível localizar o apontamento de ID: " + id));
 
-        if (hora.getEstado() != EstadoHora.PENDENTE) {
+        if (hora.getEstado() != EstadoHora.AGUARDANDO_APROVACAO) {
             throw new RuntimeException("Apenas apontamentos PENDENTES podem ser editados.");
         }
 
-        validarDataLancamento(dto.getDataLancamento());
         validarHorarios(dto.getInicio(), dto.getFim());
-        validarJustificativaRetroativa(dto.getDataLancamento(), dto.getJustificativa());
 
         hora.setTarefaId(dto.getTarefaId());
         hora.setTituloSessao(dto.getTituloSessao());
@@ -95,7 +89,7 @@ public class ApontamentoServico {
         Hora hora = repositorio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Não foi possível excluir. ID não encontrado: " + id));
 
-        if (hora.getEstado() != EstadoHora.PENDENTE) {
+        if (hora.getEstado() != EstadoHora.AGUARDANDO_APROVACAO) {
             throw new RuntimeException("Não é permitido excluir apontamentos que já foram avaliados.");
         }
 
@@ -113,12 +107,12 @@ public class ApontamentoServico {
     public HorasExibirDTO aprovarHora(Long id) {
         Hora hora = repositorio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hora não encontrada"));
-
+        
         hora.setEstado(EstadoHora.APROVADO);
-        hora.setMotivoRejeicao(null);
-
+        hora.setMotivoRejeicao(null); 
+        
         Hora horaSalva = repositorio.save(hora);
-        return converterParaExibirDTO(horaSalva);
+        return converterParaExibirDTO(horaSalva); 
     }
 
     @Transactional
@@ -128,7 +122,7 @@ public class ApontamentoServico {
 
         hora.setEstado(EstadoHora.REJEITADO);
         hora.setMotivoRejeicao(dto.getMotivoRejeicao());
-
+        
         Hora salva = repositorio.save(hora);
         return converterParaExibirDTO(salva);
     }
@@ -142,16 +136,18 @@ public class ApontamentoServico {
                 filtro.getDataInicio(),
                 filtro.getDataFim()
         ).stream()
-                .map(this::converterParaExibirDTO)
-                .collect(Collectors.toList());
+        .map(this::converterParaExibirDTO)
+        .collect(Collectors.toList());
     }
 
+
+    
     @Transactional
     public HorasExibirDTO enviarParaAprovacao(Long id) {
         Hora hora = repositorio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hora nao encontrada"));
 
-        if (hora.getEstado() != EstadoHora.PENDENTE) {
+        if (hora.getEstado() != EstadoHora.AGUARDANDO_APROVACAO) {
             throw new RuntimeException("Apenas apontamentos PENDENTES podem ser enviados para aprovacao.");
         }
 
@@ -161,25 +157,53 @@ public class ApontamentoServico {
         return converterParaExibirDTO(salva);
     }
 
-    // VALIDAÇÃO
-    private void validarDataLancamento(LocalDate dataLancamento) {
-        if (dataLancamento != null && dataLancamento.isAfter(LocalDate.now())) {
-            throw new RuntimeException("A data de lançamento não pode ser futura.");
-        }
-    }
-
-    private void validarJustificativaRetroativa(LocalDate dataLancamento, String justificativa) {
-        if (dataLancamento != null && dataLancamento.isBefore(LocalDate.now())) {
-            if (justificativa == null || justificativa.isBlank()) {
-                throw new RuntimeException("Justificativa é obrigatória para lançamentos retroativos.");
-            }
-        }
-    }
-
     private void validarHorarios(java.time.LocalTime inicio, java.time.LocalTime fim) {
-        if (fim.isBefore(inicio) || fim.equals(inicio)) {
-            throw new RuntimeException("O horário de término deve ser posterior ao início.");
+        if (fim.isBefore(inicio)) {
+            throw new RuntimeException("O horário de término não pode ser anterior ao início.");
         }
+    }
+
+    @Transactional(readOnly = true)
+    public HorasResumoDTO obterResumoPorProfissional(Long usuarioId, int mes, int ano) {
+        List<Hora> horas = repositorio.findByUsuarioIdAndMesAndAno(usuarioId, mes, ano);
+
+        HorasResumoDTO resumo = new HorasResumoDTO();
+        resumo.setUsuarioId(usuarioId);
+        resumo.setMes(mes);
+        resumo.setAno(ano);
+
+        resumo.setTotalHorasMes(
+                horas.stream()
+                        .map(h -> Duration.between(h.getInicio(), h.getFim()))
+                        .reduce(Duration.ZERO, Duration::plus)
+        );
+
+        resumo.setHorasPorStatus(
+                horas.stream().collect(Collectors.groupingBy(
+                        Hora::getEstado,
+                        Collectors.reducing(Duration.ZERO,
+                                h -> Duration.between(h.getInicio(), h.getFim()),
+                                Duration::plus)
+                ))
+        );
+
+        resumo.setHorasPorAtividade(
+                horas.stream().collect(Collectors.groupingBy(
+                        Hora::getTipoAtividade,
+                        Collectors.reducing(Duration.ZERO,
+                                h -> Duration.between(h.getInicio(), h.getFim()),
+                                Duration::plus)
+                ))
+        );
+
+        resumo.setLancamentosRejeitados(
+                horas.stream()
+                        .filter(h -> h.getEstado() == EstadoHora.REJEITADO)
+                        .map(this::converterParaExibirDTO)
+                        .collect(Collectors.toList())
+        );
+
+        return resumo;
     }
 
     private HorasExibirDTO converterParaExibirDTO(Hora hora) {
