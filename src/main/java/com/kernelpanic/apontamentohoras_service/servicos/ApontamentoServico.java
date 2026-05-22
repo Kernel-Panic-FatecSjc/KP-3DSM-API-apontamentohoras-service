@@ -165,12 +165,48 @@ public class ApontamentoServico {
 
     @Transactional(readOnly = true)
     public HorasResumoDTO obterResumoPorProfissional(Long usuarioId, int mes, int ano) {
+        
         List<Hora> horas = repositorio.findByUsuarioIdAndMesAndAno(usuarioId, mes, ano);
 
         HorasResumoDTO resumo = new HorasResumoDTO();
         resumo.setUsuarioId(usuarioId);
         resumo.setMes(mes);
         resumo.setAno(ano);
+
+        long total = horas.size();
+
+        long aprovados = horas.stream()
+                .filter(h -> h.getEstado() == EstadoHora.APROVADO)
+                .count();
+
+        long rejeitados = horas.stream()
+                .filter(h -> h.getEstado() == EstadoHora.REJEITADO)
+                .count();
+
+        long aguardando = horas.stream()
+                .filter(h -> h.getEstado() == EstadoHora.AGUARDANDO_APROVACAO)
+                .count();
+
+        if (total > 0) {
+
+            resumo.setPercentualAprovado(
+                    (aprovados * 100.0) / total
+            );
+
+            resumo.setPercentualRejeitado(
+                    (rejeitados * 100.0) / total
+            );
+
+            resumo.setPercentualAguardando(
+                    (aguardando * 100.0) / total
+            );
+
+        } else {
+
+            resumo.setPercentualAprovado(0.0);
+            resumo.setPercentualRejeitado(0.0);
+            resumo.setPercentualAguardando(0.0);
+        }
 
         resumo.setTotalHorasMes(
                 horas.stream()
