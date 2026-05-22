@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
 
 import com.kernelpanic.apontamentohoras_service.dtos.*;
 import com.kernelpanic.apontamentohoras_service.entidades.Hora;
@@ -164,14 +165,18 @@ public class ApontamentoServico {
     }
 
     @Transactional(readOnly = true)
-    public HorasResumoDTO obterResumoPorProfissional(Long usuarioId, int mes, int ano) {
+    public HorasResumoDTO obterResumoPorProfissional(Long usuarioId, LocalDate dataInicio, LocalDate dataFim) {
         
-        List<Hora> horas = repositorio.findByUsuarioIdAndMesAndAno(usuarioId, mes, ano);
+        List<Hora> horas = repositorio.findByUsuarioIdAndDataLancamentoBetween(
+            usuarioId,
+            dataInicio,
+            dataFim
+        );
 
         HorasResumoDTO resumo = new HorasResumoDTO();
         resumo.setUsuarioId(usuarioId);
-        resumo.setMes(mes);
-        resumo.setAno(ano);
+        resumo.setMes(dataInicio.getMonthValue());
+        resumo.setAno(dataInicio.getYear());
 
         long total = horas.size();
 

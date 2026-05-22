@@ -1,5 +1,7 @@
 package com.kernelpanic.apontamentohoras_service.controles;
 
+import java.time.LocalDate;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,15 +24,15 @@ public class ControlePorcentagemHoras {
     @GetMapping("/resumo/{usuarioId}")
     public ResponseEntity<HorasResumoDTO> obterResumo(
             @PathVariable Long usuarioId,
-            @RequestParam int mes,
-            @RequestParam int ano
+            @RequestParam LocalDate dataInicio,
+            @RequestParam LocalDate dataFim
     ) {
 
         HorasResumoDTO resumo =
                 apontamentoServico.obterResumoPorProfissional(
                         usuarioId,
-                        mes,
-                        ano
+                        dataInicio,
+                        dataFim
                 );
 
         return ResponseEntity.ok(resumo);
