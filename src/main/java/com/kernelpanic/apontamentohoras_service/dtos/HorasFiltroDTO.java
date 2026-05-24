@@ -8,6 +8,7 @@ import lombok.Data;
 public class HorasFiltroDTO {
     private Long usuarioId;
     private Long projetoId;
+    private Long tarefaId;
     private EstadoHora estado;
     private LocalDate dataInicio;
     private LocalDate dataFim;

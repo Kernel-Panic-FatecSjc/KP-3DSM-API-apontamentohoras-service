@@ -19,6 +19,8 @@ public class HorasExibirDTO {
 
     private Long tarefaId;
 
+    private Long projetoId;
+
     @NotNull(message = "O ID do usuário é obrigatório")
     private Long usuarioId;
 

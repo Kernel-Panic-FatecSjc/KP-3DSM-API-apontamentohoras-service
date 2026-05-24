@@ -15,6 +15,8 @@ public class HorasCadastrar {
 
     private Long tarefaId; // Pode ser nulo se a hora não for vinculada a uma tarefa específica
 
+    private Long projetoId; // Vínculo direto usado por relatórios financeiros; tarefaId continua por compatibilidade.
+
     @NotNull(message = "O ID do usuário é obrigatório para vincular o lançamento")
     private Long usuarioId;
 

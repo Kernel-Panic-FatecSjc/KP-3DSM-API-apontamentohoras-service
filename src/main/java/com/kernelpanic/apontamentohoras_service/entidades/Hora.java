@@ -30,6 +30,9 @@ public class Hora {
     @Column(name = "tarefa_id")
     private Long tarefaId;
 
+    @Column(name = "projeto_id")
+    private Long projetoId;
+
     @Column(name = "usuario_id", nullable = false)
     private Long usuarioId;
 

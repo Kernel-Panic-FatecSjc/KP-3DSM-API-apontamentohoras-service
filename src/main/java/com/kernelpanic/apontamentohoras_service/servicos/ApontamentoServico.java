@@ -47,6 +47,7 @@ public class ApontamentoServico {
         
         Hora hora = new Hora();
         hora.setTarefaId(dto.getTarefaId());
+        hora.setProjetoId(dto.getProjetoId());
         hora.setUsuarioId(dto.getUsuarioId());
         hora.setTituloSessao(dto.getTituloSessao());
         hora.setTipoAtividade(dto.getTipoAtividade());
@@ -72,6 +73,7 @@ public class ApontamentoServico {
         validarHorarios(dto.getInicio(), dto.getFim());
 
         hora.setTarefaId(dto.getTarefaId());
+        hora.setProjetoId(dto.getProjetoId());
         hora.setTituloSessao(dto.getTituloSessao());
         hora.setTipoAtividade(dto.getTipoAtividade());
         hora.setDescricao(dto.getDescricao());
@@ -136,6 +138,7 @@ public class ApontamentoServico {
         return repositorio.buscarComFiltros(
                 filtro.getUsuarioId(),
                 filtro.getProjetoId(),
+                filtro.getTarefaId(),
                 filtro.getEstado(),
                 filtro.getDataInicio(),
                 filtro.getDataFim()
@@ -160,7 +163,31 @@ public class ApontamentoServico {
         Hora salva = repositorio.save(hora);
         return converterParaExibirDTO(salva);
     }
+    @Transactional(readOnly = true)
+    public List<HorasAprovadasAgregadoDTO> buscarHorasAprovadasAgregadas(java.time.LocalDate dataInicio, java.time.LocalDate dataFim) {
+        validarPeriodo(dataInicio, dataFim);
+        return repositorio.buscarHorasAprovadasAgregadas(dataInicio, dataFim).stream()
+                .map(item -> new HorasAprovadasAgregadoDTO(item.getProjetoId(), item.getUsuarioId(), item.getHorasAprovadas()))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<HorasAprovadasEvolucaoDTO> buscarEvolucaoHorasAprovadas(java.time.LocalDate dataInicio, java.time.LocalDate dataFim) {
+        validarPeriodo(dataInicio, dataFim);
+        return repositorio.buscarEvolucaoHorasAprovadas(dataInicio, dataFim).stream()
+                .map(item -> new HorasAprovadasEvolucaoDTO(item.getProjetoId(), item.getUsuarioId(), item.getDataLancamento(), item.getHorasAprovadas()))
+                .collect(Collectors.toList());
+    }
     // --- MAPPERS E VALIDAÇÕES AUXILIARES ---
+
+    private void validarPeriodo(java.time.LocalDate dataInicio, java.time.LocalDate dataFim) {
+        if (dataInicio == null || dataFim == null) {
+            throw new RuntimeException("dataInicio e dataFim sao obrigatorios.");
+        }
+        if (dataFim.isBefore(dataInicio)) {
+            throw new RuntimeException("dataFim nao pode ser anterior a dataInicio.");
+        }
+    }
 
     private void validarHorarios(java.time.LocalTime inicio, java.time.LocalTime fim) {
         if (fim.isBefore(inicio)) {
@@ -172,6 +199,7 @@ public class ApontamentoServico {
         HorasExibirDTO dto = new HorasExibirDTO();
         dto.setId(hora.getId());
         dto.setTarefaId(hora.getTarefaId());
+        dto.setProjetoId(hora.getProjetoId());
         dto.setUsuarioId(hora.getUsuarioId());
         dto.setTituloSessao(hora.getTituloSessao());
         dto.setTipoAtividade(hora.getTipoAtividade());
@@ -186,3 +214,7 @@ public class ApontamentoServico {
         return dto;
     }
 }
+
+
+
+

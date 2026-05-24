@@ -18,6 +18,8 @@ public class HorasAtualizarDTO {
 
     private Long tarefaId;
 
+    private Long projetoId;
+
     @NotBlank(message = "O título da sessão não pode ser vazio")
     @Size(max = 255)
     private String tituloSessao;
