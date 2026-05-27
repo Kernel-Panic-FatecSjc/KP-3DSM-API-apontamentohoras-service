@@ -6,6 +6,7 @@ import java.time.LocalTime;
 
 import com.kernelpanic.apontamentohoras_service.enums.EstadoHora;
 import com.kernelpanic.apontamentohoras_service.enums.TipoAtividade;
+
 import lombok.Data;
 
 @Data
@@ -23,4 +24,5 @@ public class HorasExibirDTO {
     private String motivoRejeicao;
     private EstadoHora estado;
     private LocalDateTime dataCriacao;
+    private Double horasTrabalhadas;
 }
