@@ -26,10 +26,6 @@ public class ControleAuditoriaHoras {
 
     private final AuditoriaHoraServico auditoriaServico;
 
-    /**
-     * GET /horas/{id}/auditoria?page=0&size=20
-     * Histórico de alterações de um apontamento específico, paginado.
-     */
     @GetMapping("/horas/{id}/auditoria")
     public ResponseEntity<Page<AuditoriaHoraRespostaDTO>> buscarAuditoriaPorHora(
             @PathVariable Long id,
@@ -40,17 +36,6 @@ public class ControleAuditoriaHoras {
         return ResponseEntity.ok(auditoriaServico.buscarPorHora(id, pageable));
     }
 
-    /**
-     * GET /auditoria
-     * Consulta global com filtros opcionais: usuarioId, projetoId, dataInicio, dataFim.
-     *
-     * Exemplos:
-     *   GET /auditoria?page=0&size=20
-     *   GET /auditoria?usuarioId=5
-     *   GET /auditoria?projetoId=3
-     *   GET /auditoria?dataInicio=2026-05-01&dataFim=2026-05-31
-     *   GET /auditoria?usuarioId=5&projetoId=3&page=0&size=10
-     */
     @GetMapping("/auditoria")
     public ResponseEntity<Page<AuditoriaHoraRespostaDTO>> buscarAuditoria(
             @RequestParam(required = false) Long usuarioId,
