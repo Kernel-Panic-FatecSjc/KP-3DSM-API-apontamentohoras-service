@@ -18,6 +18,8 @@ public class HorasAtualizarDTO {
 
     private Long tarefaId;
 
+    private Long projetoId;
+
     @NotBlank(message = "O título da sessão não pode ser vazio")
     @Size(max = 255)
     private String tituloSessao;
@@ -38,7 +40,7 @@ public class HorasAtualizarDTO {
     private LocalTime fim;
 
     private String justificativa;
-    
+
     // Nota: Não incluímos 'estado' ou 'motivoRejeicao' aqui, 
     // pois a edição pelo usuário geralmente reseta o estado para PENDENTE 
     // ou segue uma regra de aprovação automática.

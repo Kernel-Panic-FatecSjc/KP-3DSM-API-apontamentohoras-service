@@ -6,8 +6,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-
 import com.kernelpanic.apontamentohoras_service.dtos.*;
 import com.kernelpanic.apontamentohoras_service.entidades.Hora;
 import com.kernelpanic.apontamentohoras_service.enums.EstadoHora;
@@ -20,7 +18,9 @@ import lombok.RequiredArgsConstructor;
 public class ApontamentoServico {
 
     private final ApontamentoRepositorio repositorio;
+    private final AuditoriaHoraServico auditoriaServico;
 
+    // --- MÉTODOS DE CONSULTA ---
 
     public List<HorasExibirDTO> obterTodos() {
         return repositorio.findAll().stream()
@@ -40,6 +40,7 @@ public class ApontamentoServico {
                 .collect(Collectors.toList());
     }
 
+    // --- MÉTODOS DE ESCRITA ---
 
     @Transactional
     public HorasExibirDTO cadastrarViaDTO(HorasCadastrar dto) {
@@ -47,6 +48,7 @@ public class ApontamentoServico {
         
         Hora hora = new Hora();
         hora.setTarefaId(dto.getTarefaId());
+        hora.setProjetoId(dto.getProjetoId());
         hora.setUsuarioId(dto.getUsuarioId());
         hora.setTituloSessao(dto.getTituloSessao());
         hora.setTipoAtividade(dto.getTipoAtividade());
@@ -65,13 +67,16 @@ public class ApontamentoServico {
         Hora hora = repositorio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Não foi possível localizar o apontamento de ID: " + id));
 
-        if (hora.getEstado() != EstadoHora.AGUARDANDO_APROVACAO) {
-            throw new RuntimeException("Apenas apontamentos PENDENTES podem ser editados.");
+        if (hora.getEstado() != EstadoHora.PENDENTE && hora.getEstado() != EstadoHora.APROVADO) {
+            throw new RuntimeException("Apenas apontamentos PENDENTES ou APROVADOS podem ser editados.");
         }
 
         validarHorarios(dto.getInicio(), dto.getFim());
 
+        Hora horaAntes = copiarHora(hora);
+
         hora.setTarefaId(dto.getTarefaId());
+        hora.setProjetoId(dto.getProjetoId());
         hora.setTituloSessao(dto.getTituloSessao());
         hora.setTipoAtividade(dto.getTipoAtividade());
         hora.setDescricao(dto.getDescricao());
@@ -81,6 +86,12 @@ public class ApontamentoServico {
         hora.setJustificativa(dto.getJustificativa());
 
         Hora horaSalva = repositorio.save(hora);
+
+        // Auditoria somente quando a hora já estava APROVADA antes da edição
+        if (horaAntes.getEstado() == EstadoHora.APROVADO) {
+            auditoriaServico.registrarAlteracoes(horaAntes, horaSalva);
+        }
+
         return converterParaExibirDTO(horaSalva);
     }
 
@@ -89,7 +100,7 @@ public class ApontamentoServico {
         Hora hora = repositorio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Não foi possível excluir. ID não encontrado: " + id));
 
-        if (hora.getEstado() != EstadoHora.AGUARDANDO_APROVACAO) {
+        if (hora.getEstado() != EstadoHora.PENDENTE) {
             throw new RuntimeException("Não é permitido excluir apontamentos que já foram avaliados.");
         }
 
@@ -103,35 +114,46 @@ public class ApontamentoServico {
                 .orElseThrow(() -> new RuntimeException("Registro " + id + " não encontrado."));
     }
 
+    // --- MÉTODOS DE APROVAÇÃO (GERÊNCIA) ---
+
     @Transactional
     public HorasExibirDTO aprovarHora(Long id) {
         Hora hora = repositorio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Hora não encontrada"));
-        
+                .orElseThrow(() -> new RuntimeException("Hora n\u00e3o encontrada"));
+
+        Hora horaAntes = copiarHora(hora);
+
         hora.setEstado(EstadoHora.APROVADO);
         hora.setMotivoRejeicao(null); 
         
         Hora horaSalva = repositorio.save(hora);
+        auditoriaServico.registrarAlteracoes(horaAntes, horaSalva);
         return converterParaExibirDTO(horaSalva); 
     }
 
     @Transactional
     public HorasExibirDTO rejeitarHora(Long id, HorasRejeitarDTO dto) {
         Hora hora = repositorio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Hora não encontrada"));
+                .orElseThrow(() -> new RuntimeException("Hora n\u00e3o encontrada"));
+
+        Hora horaAntes = copiarHora(hora);
 
         hora.setEstado(EstadoHora.REJEITADO);
         hora.setMotivoRejeicao(dto.getMotivoRejeicao());
         
         Hora salva = repositorio.save(hora);
+        auditoriaServico.registrarAlteracoes(horaAntes, salva);
         return converterParaExibirDTO(salva);
     }
 
     @Transactional(readOnly = true)
     public List<HorasExibirDTO> filtrarHoras(HorasFiltroDTO filtro) {
+        // Aqui você usaria o repositório com uma Specification ou Query customizada
+        // Se o seu repositório ainda não tem busca dinâmica, você pode implementar assim:
         return repositorio.buscarComFiltros(
                 filtro.getUsuarioId(),
                 filtro.getProjetoId(),
+                filtro.getTarefaId(),
                 filtro.getEstado(),
                 filtro.getDataInicio(),
                 filtro.getDataFim()
@@ -147,7 +169,7 @@ public class ApontamentoServico {
         Hora hora = repositorio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hora nao encontrada"));
 
-        if (hora.getEstado() != EstadoHora.AGUARDANDO_APROVACAO) {
+        if (hora.getEstado() != EstadoHora.PENDENTE) {
             throw new RuntimeException("Apenas apontamentos PENDENTES podem ser enviados para aprovacao.");
         }
 
@@ -156,6 +178,31 @@ public class ApontamentoServico {
         Hora salva = repositorio.save(hora);
         return converterParaExibirDTO(salva);
     }
+    @Transactional(readOnly = true)
+    public List<HorasAprovadasAgregadoDTO> buscarHorasAprovadasAgregadas(java.time.LocalDate dataInicio, java.time.LocalDate dataFim) {
+        validarPeriodo(dataInicio, dataFim);
+        return repositorio.buscarHorasAprovadasAgregadas(dataInicio, dataFim).stream()
+                .map(item -> new HorasAprovadasAgregadoDTO(item.getProjetoId(), item.getUsuarioId(), item.getHorasAprovadas()))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<HorasAprovadasEvolucaoDTO> buscarEvolucaoHorasAprovadas(java.time.LocalDate dataInicio, java.time.LocalDate dataFim) {
+        validarPeriodo(dataInicio, dataFim);
+        return repositorio.buscarEvolucaoHorasAprovadas(dataInicio, dataFim).stream()
+                .map(item -> new HorasAprovadasEvolucaoDTO(item.getProjetoId(), item.getUsuarioId(), item.getDataLancamento(), item.getHorasAprovadas()))
+                .collect(Collectors.toList());
+    }
+    // --- MAPPERS E VALIDA��ES AUXILIARES ---
+
+    private void validarPeriodo(java.time.LocalDate dataInicio, java.time.LocalDate dataFim) {
+        if (dataInicio == null || dataFim == null) {
+            throw new RuntimeException("dataInicio e dataFim sao obrigatorios.");
+        }
+        if (dataFim.isBefore(dataInicio)) {
+            throw new RuntimeException("dataFim nao pode ser anterior a dataInicio.");
+        }
+    }
 
     private void validarHorarios(java.time.LocalTime inicio, java.time.LocalTime fim) {
         if (fim.isBefore(inicio)) {
@@ -163,53 +210,11 @@ public class ApontamentoServico {
         }
     }
 
-    @Transactional(readOnly = true)
-    public HorasResumoDTO obterResumoPorProfissional(Long usuarioId, int mes, int ano) {
-        List<Hora> horas = repositorio.findByUsuarioIdAndMesAndAno(usuarioId, mes, ano);
-
-        HorasResumoDTO resumo = new HorasResumoDTO();
-        resumo.setUsuarioId(usuarioId);
-        resumo.setMes(mes);
-        resumo.setAno(ano);
-
-        resumo.setTotalHorasMes(
-                horas.stream()
-                        .map(h -> Duration.between(h.getInicio(), h.getFim()))
-                        .reduce(Duration.ZERO, Duration::plus)
-        );
-
-        resumo.setHorasPorStatus(
-                horas.stream().collect(Collectors.groupingBy(
-                        Hora::getEstado,
-                        Collectors.reducing(Duration.ZERO,
-                                h -> Duration.between(h.getInicio(), h.getFim()),
-                                Duration::plus)
-                ))
-        );
-
-        resumo.setHorasPorAtividade(
-                horas.stream().collect(Collectors.groupingBy(
-                        Hora::getTipoAtividade,
-                        Collectors.reducing(Duration.ZERO,
-                                h -> Duration.between(h.getInicio(), h.getFim()),
-                                Duration::plus)
-                ))
-        );
-
-        resumo.setLancamentosRejeitados(
-                horas.stream()
-                        .filter(h -> h.getEstado() == EstadoHora.REJEITADO)
-                        .map(this::converterParaExibirDTO)
-                        .collect(Collectors.toList())
-        );
-
-        return resumo;
-    }
-
     private HorasExibirDTO converterParaExibirDTO(Hora hora) {
         HorasExibirDTO dto = new HorasExibirDTO();
         dto.setId(hora.getId());
         dto.setTarefaId(hora.getTarefaId());
+        dto.setProjetoId(hora.getProjetoId());
         dto.setUsuarioId(hora.getUsuarioId());
         dto.setTituloSessao(hora.getTituloSessao());
         dto.setTipoAtividade(hora.getTipoAtividade());
@@ -223,4 +228,27 @@ public class ApontamentoServico {
         dto.setDataCriacao(hora.getDataCriacao());
         return dto;
     }
+
+    private Hora copiarHora(Hora hora) {
+        Hora copia = new Hora();
+        copia.setId(hora.getId());
+        copia.setTarefaId(hora.getTarefaId());
+        copia.setProjetoId(hora.getProjetoId());
+        copia.setUsuarioId(hora.getUsuarioId());
+        copia.setTituloSessao(hora.getTituloSessao());
+        copia.setTipoAtividade(hora.getTipoAtividade());
+        copia.setDescricao(hora.getDescricao());
+        copia.setDataLancamento(hora.getDataLancamento());
+        copia.setInicio(hora.getInicio());
+        copia.setFim(hora.getFim());
+        copia.setJustificativa(hora.getJustificativa());
+        copia.setMotivoRejeicao(hora.getMotivoRejeicao());
+        copia.setEstado(hora.getEstado());
+        copia.setDataCriacao(hora.getDataCriacao());
+        return copia;
+    }
 }
+
+
+
+

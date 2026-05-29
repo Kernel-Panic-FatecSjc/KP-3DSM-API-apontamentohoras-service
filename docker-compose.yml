@@ -2,26 +2,47 @@ services:
   db-apontamento:
     image: mysql:8.0
     container_name: db-apontamento
+
     environment:
       MYSQL_DATABASE: bancohoras
       MYSQL_ROOT_PASSWORD: fatec
+
     ports:
       - "3310:3306"
+
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - kp-network
 
   apontamento-service:
     build: .
     container_name: apontamento-service
+
     ports:
       - "8084:8084"
+
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://db-apontamento:3306/bancohoras?createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=fatec
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      # URLs dos outros serviços para resolução de nomes na auditoria (leitura apenas)
+      # Em Docker, os containers devem estar na mesma rede para que esses hostnames funcionem
+      - USUARIO_SERVICE_URL=http://usuario-service-app:8083
+      - PROJETO_SERVICE_URL=http://spring-api-container:8082
+      - JWT_SECRET=sua_chave_secreta_muito_segura_com_mais_de_256_bits_para_hs256
+
+    networks:
+      - kp-network
+
     depends_on:
       db-apontamento:
         condition: service_healthy
+
+networks:
+  kp-network:
+    external: true
