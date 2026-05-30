@@ -16,6 +16,12 @@ public interface ApontamentoRepositorio extends JpaRepository<Hora, Long> {
 
     List<Hora> findByUsuarioId(Long usuarioId);
 
+    List<Hora> findByUsuarioIdAndDataLancamentoBetween(
+        Long usuarioId,
+        LocalDate dataInicio,
+        LocalDate dataFim
+        );
+
     List<Hora> findByUsuarioIdAndEstado(Long usuarioId, EstadoHora estado);
 
     @Query("SELECT h FROM Hora h WHERE " +

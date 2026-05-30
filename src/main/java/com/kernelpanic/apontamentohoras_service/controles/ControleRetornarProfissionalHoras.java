@@ -1,5 +1,7 @@
 package com.kernelpanic.apontamentohoras_service.controles;
 
+import java.time.LocalDate;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,10 +20,11 @@ public class ControleRetornarProfissionalHoras {
     @GetMapping("/{id}/resumo")
     public ResponseEntity<HorasResumoDTO> obterResumoProfissional(
             @PathVariable Long id,
-            @RequestParam int mes,
-            @RequestParam int ano) {
+            @RequestParam LocalDate dataInicio,
+            @RequestParam LocalDate dataFim 
+    ){
 
-        HorasResumoDTO resultado = horaService.obterResumoPorProfissional(id, mes, ano);
+        HorasResumoDTO resultado = horaService.obterResumoPorProfissional(id, dataInicio, dataFim);
         return ResponseEntity.ok(resultado);
     }
 }

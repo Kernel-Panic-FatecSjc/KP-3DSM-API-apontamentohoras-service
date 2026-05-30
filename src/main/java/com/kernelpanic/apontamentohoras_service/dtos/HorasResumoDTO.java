@@ -18,4 +18,7 @@ public class HorasResumoDTO {
     private Map<EstadoHora, Duration> horasPorStatus;
     private Map<TipoAtividade, Duration> horasPorAtividade;
     private List<HorasExibirDTO> lancamentosRejeitados;
+    private Double percentualAprovado;
+    private Double percentualRejeitado;
+    private Double percentualAguardando;
 }

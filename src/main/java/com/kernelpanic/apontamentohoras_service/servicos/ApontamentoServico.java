@@ -6,6 +6,9 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDate;
+
 import com.kernelpanic.apontamentohoras_service.dtos.*;
 import com.kernelpanic.apontamentohoras_service.entidades.Hora;
 import com.kernelpanic.apontamentohoras_service.enums.EstadoHora;
@@ -208,6 +211,89 @@ public class ApontamentoServico {
         if (fim.isBefore(inicio)) {
             throw new RuntimeException("O horário de término não pode ser anterior ao início.");
         }
+    }
+
+    @Transactional(readOnly = true)
+    public HorasResumoDTO obterResumoPorProfissional(Long usuarioId, LocalDate dataInicio, LocalDate dataFim) {
+        
+        List<Hora> horas = repositorio.findByUsuarioIdAndDataLancamentoBetween(
+            usuarioId,
+            dataInicio,
+            dataFim
+        );
+
+        HorasResumoDTO resumo = new HorasResumoDTO();
+        resumo.setUsuarioId(usuarioId);
+        resumo.setMes(dataInicio.getMonthValue());
+        resumo.setAno(dataInicio.getYear());
+
+        long total = horas.size();
+
+        long aprovados = horas.stream()
+                .filter(h -> h.getEstado() == EstadoHora.APROVADO)
+                .count();
+
+        long rejeitados = horas.stream()
+                .filter(h -> h.getEstado() == EstadoHora.REJEITADO)
+                .count();
+
+        long aguardando = horas.stream()
+                .filter(h -> h.getEstado() == EstadoHora.AGUARDANDO_APROVACAO)
+                .count();
+
+        if (total > 0) {
+
+            resumo.setPercentualAprovado(
+                    (aprovados * 100.0) / total
+            );
+
+            resumo.setPercentualRejeitado(
+                    (rejeitados * 100.0) / total
+            );
+
+            resumo.setPercentualAguardando(
+                    (aguardando * 100.0) / total
+            );
+
+        } else {
+
+            resumo.setPercentualAprovado(0.0);
+            resumo.setPercentualRejeitado(0.0);
+            resumo.setPercentualAguardando(0.0);
+        }
+
+        resumo.setTotalHorasMes(
+                horas.stream()
+                        .map(h -> Duration.between(h.getInicio(), h.getFim()))
+                        .reduce(Duration.ZERO, Duration::plus)
+        );
+
+        resumo.setHorasPorStatus(
+                horas.stream().collect(Collectors.groupingBy(
+                        Hora::getEstado,
+                        Collectors.reducing(Duration.ZERO,
+                                h -> Duration.between(h.getInicio(), h.getFim()),
+                                Duration::plus)
+                ))
+        );
+
+        resumo.setHorasPorAtividade(
+                horas.stream().collect(Collectors.groupingBy(
+                        Hora::getTipoAtividade,
+                        Collectors.reducing(Duration.ZERO,
+                                h -> Duration.between(h.getInicio(), h.getFim()),
+                                Duration::plus)
+                ))
+        );
+
+        resumo.setLancamentosRejeitados(
+                horas.stream()
+                        .filter(h -> h.getEstado() == EstadoHora.REJEITADO)
+                        .map(this::converterParaExibirDTO)
+                        .collect(Collectors.toList())
+        );
+
+        return resumo;
     }
 
     private HorasExibirDTO converterParaExibirDTO(Hora hora) {
