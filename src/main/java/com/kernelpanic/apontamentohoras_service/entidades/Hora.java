@@ -72,7 +72,7 @@ public class Hora {
     public void prePersist() {
         this.dataCriacao = LocalDateTime.now();
         if (this.estado == null) {
-            this.estado = EstadoHora.AGUARDANDO_APROVACAO;
+            this.estado = EstadoHora.PENDENTE;
         }
     }
 }

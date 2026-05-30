@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kernelpanic.apontamentohoras_service.dtos.HorasAtualizarDTO;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasAprovadasAgregadoDTO;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasAprovadasEvolucaoDTO;
 import com.kernelpanic.apontamentohoras_service.dtos.HorasCadastrar;
 import com.kernelpanic.apontamentohoras_service.dtos.HorasExibirDTO;
 import com.kernelpanic.apontamentohoras_service.dtos.HorasFiltroDTO;
@@ -52,7 +54,7 @@ public class ApontamentoServico {
         LocalDate inicio = (dataInicio == null || dataInicio.isBlank()) ? null : LocalDate.parse(dataInicio);
         LocalDate fim = (dataFim == null || dataFim.isBlank()) ? null : LocalDate.parse(dataFim);
 
-        return repositorio.buscarComFiltros(usuarioId, null, null, inicio, fim).stream()
+        return repositorio.buscarComFiltros(usuarioId, null, null, null, inicio, fim).stream()
                 .map(this::converterParaExibirDTO)
                 .collect(Collectors.toList());
     }
