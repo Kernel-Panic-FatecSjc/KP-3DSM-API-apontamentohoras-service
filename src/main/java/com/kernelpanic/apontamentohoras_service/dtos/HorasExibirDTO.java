@@ -50,4 +50,5 @@ public class HorasExibirDTO {
 
     @NotNull(message = "A data de criação é obrigatória")
     private LocalDateTime dataCriacao;
+    private Double horasTrabalhadas;
 }

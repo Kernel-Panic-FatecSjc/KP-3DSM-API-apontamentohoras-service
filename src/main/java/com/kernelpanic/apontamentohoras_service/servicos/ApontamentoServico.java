@@ -1,15 +1,19 @@
 package com.kernelpanic.apontamentohoras_service.servicos;
 
+import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.time.LocalDate;
-
-import com.kernelpanic.apontamentohoras_service.dtos.*;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasAtualizarDTO;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasCadastrar;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasExibirDTO;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasFiltroDTO;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasRejeitarDTO;
+import com.kernelpanic.apontamentohoras_service.dtos.HorasResumoDTO;
 import com.kernelpanic.apontamentohoras_service.entidades.Hora;
 import com.kernelpanic.apontamentohoras_service.enums.EstadoHora;
 import com.kernelpanic.apontamentohoras_service.repositorios.ApontamentoRepositorio;
@@ -43,7 +47,15 @@ public class ApontamentoServico {
                 .collect(Collectors.toList());
     }
 
-    // --- MÉTODOS DE ESCRITA ---
+    @Transactional(readOnly = true)
+    public List<HorasExibirDTO> obterHorasPorProfissional(Long usuarioId, String dataInicio, String dataFim) {
+        LocalDate inicio = (dataInicio == null || dataInicio.isBlank()) ? null : LocalDate.parse(dataInicio);
+        LocalDate fim = (dataFim == null || dataFim.isBlank()) ? null : LocalDate.parse(dataFim);
+
+        return repositorio.buscarComFiltros(usuarioId, null, null, inicio, fim).stream()
+                .map(this::converterParaExibirDTO)
+                .collect(Collectors.toList());
+    }
 
     @Transactional
     public HorasExibirDTO cadastrarViaDTO(HorasCadastrar dto) {
@@ -312,6 +324,7 @@ public class ApontamentoServico {
         dto.setMotivoRejeicao(hora.getMotivoRejeicao());
         dto.setEstado(hora.getEstado());
         dto.setDataCriacao(hora.getDataCriacao());
+        dto.setHorasTrabalhadas(Duration.between(hora.getInicio(), hora.getFim()).toMinutes() / 60.0);
         return dto;
     }
 

@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kernelpanic.apontamentohoras_service.dtos.HorasExibirDTO;
@@ -25,4 +27,14 @@ public class ControleFiltrarHoras {
         List<HorasExibirDTO> resultados = horaService.filtrarHoras(filtro);
         return ResponseEntity.ok(resultados);
     }
-}
+
+    @GetMapping("/profissional/{usuarioId}")
+    public ResponseEntity<List<HorasExibirDTO>> obterHorasPorProfissional(
+            @PathVariable Long usuarioId,
+            @RequestParam(required = false) String dataInicio,
+            @RequestParam(required = false) String dataFim) {
+
+        List<HorasExibirDTO> resultados = horaService.obterHorasPorProfissional(usuarioId, dataInicio, dataFim);
+        return ResponseEntity.ok(resultados);
+    }
+} 
