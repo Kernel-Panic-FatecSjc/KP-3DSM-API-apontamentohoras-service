@@ -30,6 +30,9 @@ public class Hora {
     @Column(name = "tarefa_id")
     private Long tarefaId;
 
+    @Column(name = "projeto_id")
+    private Long projetoId;
+
     @Column(name = "usuario_id", nullable = false)
     private Long usuarioId;
 
@@ -69,11 +72,7 @@ public class Hora {
     public void prePersist() {
         this.dataCriacao = LocalDateTime.now();
         if (this.estado == null) {
-            if (this.dataLancamento != null && this.dataLancamento.isBefore(LocalDate.now())) {
-                this.estado = EstadoHora.AGUARDANDO_APROVACAO;
-            } else {
-                this.estado = EstadoHora.PENDENTE;
-            }
+            this.estado = EstadoHora.PENDENTE;
         }
     }
 }

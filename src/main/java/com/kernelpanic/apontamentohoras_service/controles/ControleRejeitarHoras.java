@@ -22,9 +22,7 @@ public class ControleRejeitarHoras {
 
     @PatchMapping("/rejeitar")
     public ResponseEntity<HorasExibirDTO> rejeitar(@Valid @RequestBody HorasRejeitarDTO dto) {
-        
         HorasExibirDTO rejeitada = horaService.rejeitarHora(dto.getId(), dto);
-        
         return ResponseEntity.ok(rejeitada);
     }
 }
