@@ -49,6 +49,9 @@ public class Hora {
     @Column(name = "data_lancamento", nullable = false)
     private LocalDate dataLancamento;
 
+    @Column(name = "data_fim")
+    private LocalDate dataFim
+
     @Column(name = "inicio", nullable = false)
     private LocalTime inicio;
 

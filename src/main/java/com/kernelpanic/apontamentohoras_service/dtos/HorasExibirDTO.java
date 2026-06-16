@@ -35,6 +35,8 @@ public class HorasExibirDTO {
     @NotNull(message = "A data de lançamento é obrigatória")
     private LocalDate dataLancamento;
 
+    private LocalDate dataFim;
+
     @NotNull(message = "O horário de início é obrigatório")
     private LocalTime inicio;
 

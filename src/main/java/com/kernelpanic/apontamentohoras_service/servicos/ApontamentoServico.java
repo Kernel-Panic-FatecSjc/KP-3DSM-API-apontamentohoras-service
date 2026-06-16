@@ -349,7 +349,3 @@ public class ApontamentoServico {
         return copia;
     }
 }
-
-
-
-

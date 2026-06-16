@@ -33,6 +33,8 @@ public class HorasCadastrar {
     @NotNull(message = "Informe a data em que o trabalho foi realizado")
     private LocalDate dataLancamento;
 
+    private LocalDate dataFim;
+
     @NotNull(message = "O horário de início é obrigatório")
     private LocalTime inicio;
 
