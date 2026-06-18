@@ -50,7 +50,7 @@ public class Hora {
     private LocalDate dataLancamento;
 
     @Column(name = "data_fim")
-    private LocalDate dataFim
+    private LocalDate dataFim;
 
     @Column(name = "inicio", nullable = false)
     private LocalTime inicio;
