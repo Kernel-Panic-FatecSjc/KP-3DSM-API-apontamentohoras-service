@@ -10,6 +10,9 @@ services:
     ports:
       - "3310:3306"
 
+    volumes:
+      - apontamentohoras_mysql_data:/var/lib/mysql
+
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -42,6 +45,10 @@ services:
     depends_on:
       db-apontamento:
         condition: service_healthy
+
+volumes:
+  apontamentohoras_mysql_data:
+    name: apontamentohoras_mysql_data
 
 networks:
   kp-network:
