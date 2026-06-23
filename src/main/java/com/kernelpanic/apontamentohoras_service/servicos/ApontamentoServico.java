@@ -71,6 +71,7 @@ public class ApontamentoServico {
         hora.setTipoAtividade(dto.getTipoAtividade());
         hora.setDescricao(dto.getDescricao());
         hora.setDataLancamento(dto.getDataLancamento());
+        hora.setDataFim(dto.getDataFim());
         hora.setInicio(dto.getInicio());
         hora.setFim(dto.getFim());
         hora.setJustificativa(dto.getJustificativa());
@@ -98,6 +99,7 @@ public class ApontamentoServico {
         hora.setTipoAtividade(dto.getTipoAtividade());
         hora.setDescricao(dto.getDescricao());
         hora.setDataLancamento(dto.getDataLancamento());
+        hora.setDataFim(dto.getDataFim());
         hora.setInicio(dto.getInicio());
         hora.setFim(dto.getFim());
         hora.setJustificativa(dto.getJustificativa());
@@ -320,6 +322,7 @@ public class ApontamentoServico {
         dto.setTipoAtividade(hora.getTipoAtividade());
         dto.setDescricao(hora.getDescricao());
         dto.setDataLancamento(hora.getDataLancamento());
+        dto.setDataFim(hora.getDataFim());
         dto.setInicio(hora.getInicio());
         dto.setFim(hora.getFim());
         dto.setJustificativa(hora.getJustificativa());
@@ -340,6 +343,7 @@ public class ApontamentoServico {
         copia.setTipoAtividade(hora.getTipoAtividade());
         copia.setDescricao(hora.getDescricao());
         copia.setDataLancamento(hora.getDataLancamento());
+        copia.setDataFim(hora.getDataFim());
         copia.setInicio(hora.getInicio());
         copia.setFim(hora.getFim());
         copia.setJustificativa(hora.getJustificativa());
